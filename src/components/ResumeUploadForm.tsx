@@ -9,6 +9,7 @@ type UploadResult = {
   recommendations: string[];
   validationIssues: string[];
   fileName: string;
+  content?: string;
   dbWarning?: string;
   details: {
     lengthScore: number;
@@ -17,7 +18,11 @@ type UploadResult = {
   };
 };
 
-export default function ResumeUploadForm() {
+type ResumeUploadFormProps = {
+  onResumeExtracted?: (resumeText: string) => void;
+};
+
+export default function ResumeUploadForm({ onResumeExtracted }: ResumeUploadFormProps) {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<UploadResult | null>(null);
@@ -85,6 +90,9 @@ export default function ResumeUploadForm() {
         setError(data?.error || `[${response.status}] ${JSON.stringify(data)}` || "Unable to upload the resume. Please try again.");
       } else {
         setResult(data);
+        if (onResumeExtracted && typeof data.content === "string") {
+          onResumeExtracted(data.content);
+        }
       }
     } catch (err) {
       console.error("Upload request failed", err);
