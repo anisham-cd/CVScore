@@ -33,7 +33,7 @@ export default function ResumeUploadForm() {
       return;
     }
     const lowerName = selectedFile.name.toLowerCase();
-    const isPdf = (selectedFile.type && selectedFile.type.includes("pdf")) || lowerName.endsWith(".pdf");
+    const isPdf = selectedFile.type?.includes("pdf") || lowerName.endsWith(".pdf");
     if (!isPdf) {
       setError("Only PDF files are allowed. Please upload a .pdf resume.");
       setFile(null);
