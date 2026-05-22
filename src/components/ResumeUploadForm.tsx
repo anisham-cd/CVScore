@@ -103,7 +103,7 @@ export default function ResumeUploadForm() {
     <section className="w-full max-w-4xl rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/20 dark:border-slate-800 dark:bg-slate-950 dark:shadow-none">
       <div className="mb-8 flex flex-col gap-3">
         <p className="text-sm uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">
-          Resume upload
+          Resume uploading application
         </p>
         <h2 className="text-3xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
           Upload a PDF resume for analysis
