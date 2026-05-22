@@ -9,6 +9,7 @@ type UploadResult = {
   recommendations: string[];
   validationIssues: string[];
   fileName: string;
+  dbWarning?: string;
   details: {
     lengthScore: number;
     keywordScore: number;
@@ -71,11 +72,11 @@ export default function ResumeUploadForm() {
 
       let data: any = null;
       try {
-        data = await response.json();
+        data = await response.clone().json();
       } catch (e) {
-        const text = await response.text();
-        console.error("Non-JSON response from /api/upload", { status: response.status, text });
-        setError(`Server returned non-JSON response (status ${response.status}): ${text}`);
+        const text = await response.clone().text();
+        console.error("Non-JSON response from /api/upload", { status: response.status, text, error: e });
+        setError(`Server returned non-JSON response (status ${response.status}): ${text || "Empty response"}`);
         return;
       }
 
@@ -164,6 +165,12 @@ export default function ResumeUploadForm() {
               Grade: {result.grade}
             </span>
           </div>
+
+          {result.dbWarning ? (
+            <div className="mb-4 rounded-3xl bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:bg-amber-950/20 dark:text-amber-100">
+              {result.dbWarning}
+            </div>
+          ) : null}
 
           <p className="text-sm leading-7 text-slate-700 dark:text-slate-300">{result.summary}</p>
 

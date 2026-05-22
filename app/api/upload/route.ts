@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/src/lib/mongodb";
 import Resume from "@/src/models/Resume";
 import { calculateScore, validateResumeContent } from "@/src/lib/resumeAnalysis";
-
 const MAX_PDF_SIZE = 5 * 1024 * 1024;
 
 export async function POST(request: Request) {
@@ -30,27 +29,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Resume files must be 5 MB or smaller." }, { status: 400 });
     }
 
-    // Dynamically import pdf-parse and resolve a callable parser function
-    let pdfParseFn: any = null;
+    // Dynamically import pdf-parse directly from its implementation file to avoid the debug wrapper.
+    let pdfParseFn: any;
     try {
-      const mod = await import("pdf-parse");
-
-    if (typeof mod === "function") {
-  pdfParseFn = mod;
-
-} else if (typeof (mod as any)?.default === "function") {
-  pdfParseFn = (mod as any).default;
-
-} else if (typeof (mod as any)?.pdfParse === "function") {
-  pdfParseFn = (mod as any).pdfParse;
-
-} else if (
-  typeof (mod as any)?.default?.pdfParse === "function"
-) {
-  pdfParseFn = (mod as any).default.pdfParse;
-}
-      if (!pdfParseFn) {
-        console.error("pdf-parse import did not expose a callable function", Object.keys(mod || {}));
+      const pdfParseModule = await import("pdf-parse/lib/pdf-parse.js");
+      pdfParseFn = (pdfParseModule as any).default ?? pdfParseModule;
+      if (typeof pdfParseFn !== "function") {
+        console.error("pdf-parse import did not resolve to a function", pdfParseModule);
         return NextResponse.json({ error: "Server cannot process PDFs (pdf-parse shape unexpected)." }, { status: 500 });
       }
     } catch (impErr) {
@@ -79,6 +64,10 @@ export async function POST(request: Request) {
         pageCount: parsed.numpages,
       },
       atsScore: analysis.score,
+      grade: analysis.grade,
+      summary: analysis.summary,
+      details: analysis.details,
+      validationIssues,
       missingSkills: [],
       suggestions: analysis.recommendations,
       interviewQuestions: [],
@@ -86,7 +75,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       message: "Resume uploaded and analyzed successfully.",
-      resumeId: storedResume._id,
+      resumeId: storedResume._id.toString(),
       fileName,
       validationIssues,
       ...analysis,

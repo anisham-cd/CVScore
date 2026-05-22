@@ -7,20 +7,33 @@ const ResumeSchema = new Schema(
       ref: "User",
     },
 
-    fileName: String,
+    fileName: {
+      type: String,
+      required: true,
+    },
 
-    content: String,
+    content: {
+      type: String,
+      required: true,
+    },
 
     extractedData: {
-      type: Object,
+      textLength: Number,
+      pageCount: Number,
     },
 
     atsScore: Number,
+    grade: String,
+    summary: String,
+    details: {
+      lengthScore: Number,
+      keywordScore: Number,
+      structureScore: Number,
+    },
 
+    validationIssues: [String],
     missingSkills: [String],
-
     suggestions: [String],
-
     interviewQuestions: [String],
   },
   {
