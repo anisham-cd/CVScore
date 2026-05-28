@@ -78,6 +78,7 @@ export async function POST(request: Request) {
       resumeId: storedResume._id.toString(),
       fileName,
       validationIssues,
+      content: resumeText,
       ...analysis,
     });
   } catch (error) {
