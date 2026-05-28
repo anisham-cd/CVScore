@@ -9,6 +9,7 @@ type UploadResult = {
   recommendations: string[];
   validationIssues: string[];
   fileName: string;
+  content?: string;
   dbWarning?: string;
   details: {
     lengthScore: number;
@@ -17,7 +18,11 @@ type UploadResult = {
   };
 };
 
-export default function ResumeUploadForm() {
+type ResumeUploadFormProps = {
+  onResumeExtracted?: (resumeText: string) => void;
+};
+
+export default function ResumeUploadForm({ onResumeExtracted }: ResumeUploadFormProps) {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<UploadResult | null>(null);
@@ -85,6 +90,9 @@ export default function ResumeUploadForm() {
         setError(data?.error || `[${response.status}] ${JSON.stringify(data)}` || "Unable to upload the resume. Please try again.");
       } else {
         setResult(data);
+        if (onResumeExtracted && typeof data.content === "string") {
+          onResumeExtracted(data.content);
+        }
       }
     } catch (err) {
       console.error("Upload request failed", err);
@@ -103,7 +111,7 @@ export default function ResumeUploadForm() {
     <section className="w-full max-w-4xl rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/20 dark:border-slate-800 dark:bg-slate-950 dark:shadow-none">
       <div className="mb-8 flex flex-col gap-3">
         <p className="text-sm uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">
-          Resume upload
+          Resume uploading application
         </p>
         <h2 className="text-3xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
           Upload a PDF resume for analysis
