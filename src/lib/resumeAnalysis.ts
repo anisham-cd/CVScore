@@ -142,14 +142,14 @@ const requirementPatterns = [
   "deliverables",
 ];
 
-function normalizeText(text: string) {
+const normalizeText = (text: string): string => {
   return text
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
-}
+};
 
-function uniqueMatches(text: string, terms: string[]) {
+const uniqueMatches = (text: string, terms: string[]): string[] => {
   const normalized = normalizeText(text);
   const found = new Set<string>();
   for (const term of terms) {
@@ -158,24 +158,24 @@ function uniqueMatches(text: string, terms: string[]) {
     }
   }
   return Array.from(found);
-}
+};
 
-function splitSentences(text: string) {
+const splitSentences = (text: string): string[] => {
   return text
     .split(/[\r\n]+|[.!?]+\s*/)
     .map((sentence) => sentence.trim())
     .filter(Boolean);
-}
+};
 
-function extractSkills(text: string) {
+const extractSkills = (text: string): string[] => {
   return uniqueMatches(text, skillKeywords);
-}
+};
 
-function extractSections(text: string) {
+const extractSections = (text: string): string[] => {
   return uniqueMatches(text, sectionKeywords);
-}
+};
 
-function extractJDRequirements(text: string) {
+const extractJDRequirements = (text: string): string[] => {
   const lines = text
     .split(/\r?\n/)
     .map((line) => line.trim())
@@ -203,9 +203,9 @@ function extractJDRequirements(text: string) {
   }
 
   return Array.from(requirements);
-}
+};
 
-function requirementMatchesText(requirement: string, text: string) {
+const requirementMatchesText = (requirement: string, text: string): boolean => {
   const normalizedText = normalizeText(text);
   const normalizedRequirement = normalizeText(requirement);
   if (normalizedText.includes(normalizedRequirement)) {
@@ -218,9 +218,9 @@ function requirementMatchesText(requirement: string, text: string) {
     .filter((word) => word.length > 3);
 
   return requirementKeywords.some((keyword) => normalizedText.includes(keyword));
-}
+};
 
-function pickHighlights(resumeText: string, terms: string[], maxHighlights = 6) {
+const pickHighlights = (resumeText: string, terms: string[], maxHighlights = 6): string[] => {
   const normalizedTerms = terms
     .map((term) => term.trim().toLowerCase())
     .filter(Boolean);
@@ -243,15 +243,15 @@ function pickHighlights(resumeText: string, terms: string[], maxHighlights = 6) 
   }
 
   return highlights;
-}
+};
 
-function buildRecommendations(
+const buildRecommendations = (
   analysis: ResumeAnalysisResult,
   jdSkills: string[],
   matchedSkills: string[],
   jdRequirements: string[],
   matchedRequirements: string[]
-) {
+) =>{
   const recommendations: string[] = [...analysis.recommendations];
 
   if (jdSkills.length > 0 && matchedSkills.length / jdSkills.length < 0.6) {
@@ -337,7 +337,7 @@ function calculateScoreLegacy(resumeText: string): ResumeAnalysisResult {
     sections: detectedSections,
     source: "manual",
   };
-}
+};
 
 export async function calculateScore(resumeText: string): Promise<ResumeAnalysisResult> {
   const useAI = process.env.USE_AI === "true" && Boolean(process.env.OPENAI_API_KEY);
@@ -444,7 +444,7 @@ function compareResumeToJDLegacy(resumeText: string, jdText: string): JDMatchAna
     keyPoints,
     source: "manual",
   };
-}
+};
 
 export async function compareResumeToJD(resumeText: string, jdText: string): Promise<JDMatchAnalysis> {
   const useAI = process.env.USE_AI === "true" && Boolean(process.env.OPENAI_API_KEY);

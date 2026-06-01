@@ -4,7 +4,7 @@ import { useState } from "react";
 import ResumeUploadForm from "@/src/components/ResumeUploadForm";
 import JobDescriptionUploadForm from "@/src/components/JobDescriptionUploadForm";
 
-export default function Home() {
+const Home = () => {
   const [currentResumeText, setCurrentResumeText] = useState("");
 
   return (
@@ -29,4 +29,6 @@ export default function Home() {
       </main>
     </div>
   );
-}
+};
+
+export default Home;
