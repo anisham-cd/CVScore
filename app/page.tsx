@@ -10,7 +10,7 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-slate-100 px-4 py-10 text-slate-900 dark:bg-slate-950 dark:text-slate-100 sm:px-6 lg:px-8">
       <main className="mx-auto flex max-w-6xl flex-col gap-10">
-        <section className="rounded-[2rem] bg-slate-950 px-8 py-10 text-white shadow-2xl shadow-slate-900/10 dark:bg-slate-900">
+        <section className=" bg-slate-950 px-8 py-10 text-white shadow-2xl shadow-slate-900/10 dark:bg-slate-900">
           <div className="max-w-3xl space-y-5">
             <p className="text-sm uppercase tracking-[0.35em] text-sky-300">Resume + JD matching</p>
             <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">

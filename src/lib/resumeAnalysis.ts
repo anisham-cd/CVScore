@@ -10,6 +10,8 @@ export type ResumeAnalysisResult = {
   };
   skills: string[];
   sections: string[];
+  source: "ai" | "manual";
+  sourceReason?: string;
 };
 
 export type JDMatchAnalysis = {
@@ -29,7 +31,11 @@ export type JDMatchAnalysis = {
   missingRequirements: string[];
   highlights: string[];
   keyPoints: string[];
+  source: "ai" | "manual";
+  sourceReason?: string;
 };
+
+import * as aiScoring from "@/src/lib/aiScoring";
 
 const resumeKeywords = [
   "experience",
@@ -273,8 +279,9 @@ const buildRecommendations = (
   }
 
   return recommendations;
-};
- export const calculateScore = (resumeText: string): ResumeAnalysisResult => {
+}
+
+function calculateScoreLegacy(resumeText: string): ResumeAnalysisResult {
   const normalized = normalizeText(resumeText);
   const length = normalized.length;
 
@@ -328,11 +335,41 @@ const buildRecommendations = (
     },
     skills: extractSkills(resumeText),
     sections: detectedSections,
+    source: "manual",
   };
 };
 
-export const compareResumeToJD = (resumeText: string, jdText: string): JDMatchAnalysis => {
-  const baseAnalysis = calculateScore(resumeText);
+export async function calculateScore(resumeText: string): Promise<ResumeAnalysisResult> {
+  const useAI = process.env.USE_AI === "true" && Boolean(process.env.OPENAI_API_KEY);
+  const manualSourceReason = useAI ? undefined : "AI scoring disabled. Set USE_AI=true and OPENAI_API_KEY for AI scoring.";
+
+  if (useAI) {
+    try {
+      const aiResult = await aiScoring.calculateScoreAI(resumeText);
+      // Basic validation / coercion
+      if (aiResult && typeof aiResult.score === "number") {
+        return {
+          score: Math.max(0, Math.min(100, Math.round(aiResult.score))),
+          grade: aiResult.grade || "",
+          summary: aiResult.summary || "",
+          recommendations: Array.isArray(aiResult.recommendations) ? aiResult.recommendations : [],
+          details: aiResult.details || { lengthScore: 0, keywordScore: 0, structureScore: 0 },
+          skills: Array.isArray(aiResult.skills) ? aiResult.skills : [],
+          sections: Array.isArray(aiResult.sections) ? aiResult.sections : [],
+          source: "ai",
+        } as ResumeAnalysisResult;
+      }
+    } catch (err) {
+      console.warn("AI scoring failed, falling back to legacy scorer:", err);
+      return { ...calculateScoreLegacy(resumeText), source: "manual", sourceReason: String(err) };
+    }
+  }
+
+  return { ...calculateScoreLegacy(resumeText), source: "manual", sourceReason: manualSourceReason };
+}
+
+function compareResumeToJDLegacy(resumeText: string, jdText: string): JDMatchAnalysis {
+  const baseAnalysis = calculateScoreLegacy(resumeText);
   const resumeSkills = extractSkills(resumeText);
   const jdSkills = extractSkills(jdText);
   const matchedSkills = resumeSkills.filter((skill) => jdSkills.includes(skill));
@@ -405,10 +442,49 @@ export const compareResumeToJD = (resumeText: string, jdText: string): JDMatchAn
     missingRequirements,
     highlights,
     keyPoints,
+    source: "manual",
   };
 };
 
-export const validateResumeContent = (resumeText: string): string[] => {
+export async function compareResumeToJD(resumeText: string, jdText: string): Promise<JDMatchAnalysis> {
+  const useAI = process.env.USE_AI === "true" && Boolean(process.env.OPENAI_API_KEY);
+  const manualSourceReason = useAI ? undefined : "AI scoring disabled. Set USE_AI=true and OPENAI_API_KEY for AI scoring.";
+
+  if (useAI) {
+    try {
+      const aiResult = await aiScoring.compareResumeToJD_Ai(resumeText, jdText);
+      if (aiResult && typeof aiResult.score === "number") {
+        // Minimal coercion to match JDMatchAnalysis shape
+        return {
+          score: Math.max(0, Math.min(100, Math.round(aiResult.score))),
+          grade: aiResult.grade || "",
+          summary: aiResult.summary || "",
+          recommendations: Array.isArray(aiResult.recommendations) ? aiResult.recommendations : [],
+          resumeScore: typeof aiResult.resumeScore === "number" ? aiResult.resumeScore : 0,
+          resumeGrade: aiResult.resumeGrade || "",
+          matchScore: typeof aiResult.matchScore === "number" ? aiResult.matchScore : 0,
+          combinedScore: typeof aiResult.combinedScore === "number" ? aiResult.combinedScore : 0,
+          jdSkills: Array.isArray(aiResult.jdSkills) ? aiResult.jdSkills : [],
+          resumeSkills: Array.isArray(aiResult.resumeSkills) ? aiResult.resumeSkills : [],
+          matchedSkills: Array.isArray(aiResult.matchedSkills) ? aiResult.matchedSkills : [],
+          jdRequirements: Array.isArray(aiResult.jdRequirements) ? aiResult.jdRequirements : [],
+          matchedRequirements: Array.isArray(aiResult.matchedRequirements) ? aiResult.matchedRequirements : [],
+          missingRequirements: Array.isArray(aiResult.missingRequirements) ? aiResult.missingRequirements : [],
+          highlights: Array.isArray(aiResult.highlights) ? aiResult.highlights : [],
+          keyPoints: Array.isArray(aiResult.keyPoints) ? aiResult.keyPoints : [],
+          source: "ai",
+        } as JDMatchAnalysis;
+      }
+    } catch (err) {
+      console.warn("AI compare failed, falling back to legacy compare:", err);
+      return { ...compareResumeToJDLegacy(resumeText, jdText), source: "manual", sourceReason: String(err) };
+    }
+  }
+
+  return { ...compareResumeToJDLegacy(resumeText, jdText), source: "manual", sourceReason: manualSourceReason };
+}
+
+export function validateResumeContent(resumeText: string): string[] {
   const normalized = normalizeText(resumeText);
   const issues: string[] = [];
 

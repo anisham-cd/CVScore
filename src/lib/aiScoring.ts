@@ -1,0 +1,82 @@
+// Lightweight AI scoring integration using OpenAI Chat Completions
+// This module returns raw parsed JSON from the model; callers should validate/coerce types.
+const OPENAI_URL = "https://openrouter.ai/api/v1/chat/completions";
+async function callOpenAI(systemPrompt: string, userPrompt: string, apiKey: string, timeout = 15000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
+    const res = await fetch(OPENAI_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        temperature: 0.0,
+        max_tokens: 800,
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(id);
+
+    if (!res.ok) {
+      const t = await res.text();
+      throw new Error(`OpenAI error ${res.status}: ${t}`);
+    }
+
+    const data = await res.json();
+    const content = data?.choices?.[0]?.message?.content;
+    return content;
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+export async function calculateScoreAI(resumeText: string) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error("OPENAI_API_KEY not configured");
+
+  const systemPrompt = `You are an expert resume evaluator. Return ONLY a single JSON object matching this schema:\n{score:number, grade:string, summary:string, recommendations:string[], details:{lengthScore:number, keywordScore:number, structureScore:number}, skills:string[], sections:string[]}\nAll numbers should be 0-100 where appropriate. Use concise sentences in arrays.`;
+
+  const userPrompt = `Resume (raw):\n---\n${resumeText}\n---\nRespond with the JSON object only.`;
+
+  const content = await callOpenAI(systemPrompt, userPrompt, apiKey);
+
+  // Try to extract JSON from the model output
+  const jsonMatch = content && content.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("AI did not return JSON");
+
+  try {
+    return JSON.parse(jsonMatch[0]);
+  } catch (err) {
+    throw new Error("Failed to parse AI JSON response: " + String(err));
+  }
+}
+
+export async function compareResumeToJD_Ai(resumeText: string, jdText: string) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error("OPENAI_API_KEY not configured");
+
+  const systemPrompt = `You are an expert hiring consultant. Return ONLY a single JSON object matching this schema:\n{score:number, grade:string, summary:string, recommendations:string[], resumeScore:number, resumeGrade:string, matchScore:number, combinedScore:number, jdSkills:string[], resumeSkills:string[], matchedSkills:string[], jdRequirements:string[], matchedRequirements:string[], missingRequirements:string[], highlights:string[], keyPoints:string[]}\nKeep arrays concise.`;
+
+  const userPrompt = `Job Description:\n---\n${jdText}\n---\nResume:\n---\n${resumeText}\n---\nRespond with the JSON object only.`;
+
+  const content = await callOpenAI(systemPrompt, userPrompt, apiKey);
+  const jsonMatch = content && content.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("AI did not return JSON");
+  try {
+    return JSON.parse(jsonMatch[0]);
+  } catch (err) {
+    throw new Error("Failed to parse AI JSON response: " + String(err));
+  }
+}
+
+export default { calculateScoreAI, compareResumeToJD_Ai };
