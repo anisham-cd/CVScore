@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { JSX, useState } from "react";
 
 type UploadResult = {
   score: number;
@@ -22,13 +22,13 @@ type ResumeUploadFormProps = {
   onResumeExtracted?: (resumeText: string) => void;
 };
 
-export default function ResumeUploadForm({ onResumeExtracted }: ResumeUploadFormProps) {
+const ResumeUploadForm = ({ onResumeExtracted }: ResumeUploadFormProps): JSX.Element => {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<UploadResult | null>(null);
   const [loading, setLoading] = useState(false);
 
-  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
     setError(null);
     setResult(null);
 
@@ -52,9 +52,9 @@ export default function ResumeUploadForm({ onResumeExtracted }: ResumeUploadForm
     }
 
     setFile(selectedFile);
-  }
+  };
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
     setError(null);
     setResult(null);
@@ -104,8 +104,7 @@ export default function ResumeUploadForm({ onResumeExtracted }: ResumeUploadForm
     } finally {
       setLoading(false);
     }
-  }
-  
+  };
 
   return (
     <section className="w-full max-w-4xl rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/20 dark:border-slate-800 dark:bg-slate-950 dark:shadow-none">
@@ -220,4 +219,6 @@ export default function ResumeUploadForm({ onResumeExtracted }: ResumeUploadForm
       ) : null}
     </section>
   );
-}
+};
+
+export default ResumeUploadForm;
