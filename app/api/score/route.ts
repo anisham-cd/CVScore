@@ -10,7 +10,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "resumeText is required" }, { status: 400 });
     }
 
-    const result = calculateScore(resumeText);
+    const result = await calculateScore(resumeText);
     return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json(

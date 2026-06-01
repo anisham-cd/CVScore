@@ -26,6 +26,8 @@ type CompareResult = {
   missingRequirements: string[];
   highlights: string[];
   keyPoints: string[];
+  source: "ai" | "manual";
+  sourceReason?: string;
 };
 
 type JobDescriptionUploadFormProps = {
@@ -234,18 +236,26 @@ export default function JobDescriptionUploadForm({ resumeText }: JobDescriptionU
             <span className="rounded-full bg-slate-100 px-4 py-1.5 text-sm font-semibold text-slate-800 dark:bg-slate-800 dark:text-slate-200">Resume score: {compareResult.resumeScore}%</span>
             <span className="rounded-full bg-slate-100 px-4 py-1.5 text-sm font-semibold text-slate-800 dark:bg-slate-800 dark:text-slate-200">Match score: {compareResult.matchScore}%</span>
             <span className="rounded-full bg-slate-100 px-4 py-1.5 text-sm font-semibold text-slate-800 dark:bg-slate-800 dark:text-slate-200">Combined score: {compareResult.combinedScore}%</span>
+            <span className={`rounded-full px-4 py-1.5 text-sm font-semibold ${compareResult.source === "ai" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200" : "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-100"}`}>
+              Compared by {compareResult.source === "ai" ? "AI" : "manual algorithm"}
+            </span>
           </div>
 
           <p className="text-sm leading-7 text-slate-700 dark:text-slate-300">{compareResult.summary}</p>
+          {compareResult.sourceReason ? (
+            <div className="mt-4 rounded-3xl bg-slate-100 px-4 py-3 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+              <strong>Source note:</strong> {compareResult.sourceReason}
+            </div>
+          ) : null}
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <div className="rounded-3xl bg-slate-50 p-4 dark:bg-slate-900">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Matched skills</h3>
-              <p className="mt-3 min-h-[2rem] text-sm text-slate-700 dark:text-slate-300">{compareResult.matchedSkills.length ? compareResult.matchedSkills.join(", ") : "None detected"}</p>
+              <p className="mt-3 min-h-8 text-sm text-slate-700 dark:text-slate-300">{compareResult.matchedSkills.length ? compareResult.matchedSkills.join(", ") : "None detected"}</p>
             </div>
             <div className="rounded-3xl bg-slate-50 p-4 dark:bg-slate-900">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Missing JD requirements</h3>
-              <p className="mt-3 min-h-[2rem] text-sm text-slate-700 dark:text-slate-300">{compareResult.missingRequirements.length ? compareResult.missingRequirements.join("; ") : "No critical JD requirements detected as missing."}</p>
+              <p className="mt-3 min-h-8 text-sm text-slate-700 dark:text-slate-300">{compareResult.missingRequirements.length ? compareResult.missingRequirements.join("; ") : "No critical JD requirements detected as missing."}</p>
             </div>
           </div>
 

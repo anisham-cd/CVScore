@@ -52,7 +52,7 @@ export async function POST(request: Request) {
 
     const validationIssues = validateResumeContent(resumeText);
 
-    const analysis = calculateScore(resumeText);
+    const analysis = await calculateScore(resumeText);
 
     await connectDB();
 
