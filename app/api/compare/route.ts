@@ -11,7 +11,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Both resumeText and jdText are required." }, { status: 400 });
     }
 
-    const result = compareResumeToJD(resumeText, jdText);
+    const result = await compareResumeToJD(resumeText, jdText);
     return NextResponse.json(result);
   } catch (err) {
     console.error("Compare error", err);

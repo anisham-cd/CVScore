@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { JSX, useState } from "react";
 
 type UploadResult = {
   score: number;
@@ -11,6 +11,8 @@ type UploadResult = {
   fileName: string;
   content?: string;
   dbWarning?: string;
+  source: "ai" | "manual";
+  sourceReason?: string;
   details: {
     lengthScore: number;
     keywordScore: number;
@@ -22,13 +24,13 @@ type ResumeUploadFormProps = {
   onResumeExtracted?: (resumeText: string) => void;
 };
 
-export default function ResumeUploadForm({ onResumeExtracted }: ResumeUploadFormProps) {
+const ResumeUploadForm = ({ onResumeExtracted }: ResumeUploadFormProps): JSX.Element => {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<UploadResult | null>(null);
   const [loading, setLoading] = useState(false);
 
-  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
     setError(null);
     setResult(null);
 
@@ -52,9 +54,9 @@ export default function ResumeUploadForm({ onResumeExtracted }: ResumeUploadForm
     }
 
     setFile(selectedFile);
-  }
+  };
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
     setError(null);
     setResult(null);
@@ -104,8 +106,7 @@ export default function ResumeUploadForm({ onResumeExtracted }: ResumeUploadForm
     } finally {
       setLoading(false);
     }
-  }
-  
+  };
 
   return (
     <section className="w-full max-w-4xl rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/20 dark:border-slate-800 dark:bg-slate-950 dark:shadow-none">
@@ -172,7 +173,15 @@ export default function ResumeUploadForm({ onResumeExtracted }: ResumeUploadForm
             <span className="rounded-full bg-slate-100 px-4 py-1.5 text-sm font-semibold text-slate-800 dark:bg-slate-800 dark:text-slate-200">
               Grade: {result.grade}
             </span>
+            <span className={`rounded-full px-4 py-1.5 text-sm font-semibold ${result.source === "ai" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200" : "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-100"}`}>
+              Scored by {result.source === "ai" ? "AI" : "manual algorithm"}
+            </span>
           </div>
+          {result.sourceReason ? (
+            <div className="rounded-3xl bg-slate-100 px-4 py-3 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+              <strong>Source note:</strong> {result.sourceReason}
+            </div>
+          ) : null}
 
           {result.dbWarning ? (
             <div className="mb-4 rounded-3xl bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:bg-amber-950/20 dark:text-amber-100">
@@ -185,7 +194,7 @@ export default function ResumeUploadForm({ onResumeExtracted }: ResumeUploadForm
           <div className="mt-6 grid gap-4 sm:grid-cols-3">
             <div className="rounded-3xl bg-white p-4 shadow-sm shadow-slate-200/60 dark:bg-slate-950 dark:shadow-none">
               <p className="text-sm text-slate-500 dark:text-slate-400">Length score</p>
-              <p className="mt-3 text-2xl font-semibold text-slate-950 dark:text-slate-100">{result.details.lengthScore}</p>
+              <p className="mt-3 text-2xl font-semibold text-slate-950 dark:text-slate-100">{result.details?.lengthScore}</p>
             </div>
             <div className="rounded-3xl bg-white p-4 shadow-sm shadow-slate-200/60 dark:bg-slate-950 dark:shadow-none">
               <p className="text-sm text-slate-500 dark:text-slate-400">Keyword score</p>
@@ -220,4 +229,6 @@ export default function ResumeUploadForm({ onResumeExtracted }: ResumeUploadForm
       ) : null}
     </section>
   );
-}
+};
+
+export default ResumeUploadForm;

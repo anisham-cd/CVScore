@@ -52,7 +52,7 @@ export async function POST(request: Request) {
 
     const validationIssues = validateResumeContent(resumeText);
 
-    const analysis = calculateScore(resumeText);
+    const analysis = await calculateScore(resumeText);
 
     await connectDB();
 
@@ -81,12 +81,22 @@ export async function POST(request: Request) {
       content: resumeText,
       ...analysis,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Resume upload error", error);
-    return NextResponse.json(
-      { error: "Failed to process the resume upload. Verify the file and try again." },
-      { status: 500 }
-    );
+
+    const isDev = process.env.NODE_ENV !== "production";
+    const errMsg = error instanceof Error ? error.message : String(error);
+
+    const payload: any = {
+      error: "Failed to process the resume upload. Verify the file and try again.",
+    };
+
+    if (isDev) {
+      payload.details = errMsg;
+      if (error?.stack) payload.stack = error.stack;
+    }
+
+    return NextResponse.json(payload, { status: 500 });
   }
 }
     
