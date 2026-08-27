@@ -14,10 +14,10 @@ const Home = () => {
           <div className="max-w-3xl space-y-5">
             <p className="text-sm uppercase tracking-[0.35em] text-sky-300">Resume + JD matching</p>
             <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-              Upload a resume and a job description to calculate JD fit.
+              Upload a resume and a job description to compare your fit.
             </h1>
             <p className="max-w-2xl text-base leading-8 text-slate-300">
-              Upload a resume and a JD file or paste JD text to compute match score, shared skills, highlights, and fit recommendations.
+              Upload a resume and a JD file or paste JD text to see clear strengths, matches, and gaps.
             </p>
           </div>
         </section>

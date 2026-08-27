@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/src/lib/mongodb";
 import Resume from "@/src/models/Resume";
-import { calculateScore, validateResumeContent } from "@/src/lib/resumeAnalysis";
 const MAX_PDF_SIZE = 5 * 1024 * 1024;
 
 export async function POST(request: Request) {
@@ -9,13 +8,13 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const resumeFile = formData.get("resume");
 
-    if (!resumeFile || typeof resumeFile === "string" || !("arrayBuffer" in resumeFile)) {
+    if (!(resumeFile instanceof File)) {
       return NextResponse.json({ error: "A PDF resume file is required." }, { status: 400 });
     }
 
-    const fileName = (resumeFile as any).name || "resume.pdf";
-    const fileType = (resumeFile as any).type || "";
-    const fileBuffer = Buffer.from(await (resumeFile as any).arrayBuffer());
+    const fileName = resumeFile.name || "resume.pdf";
+    const fileType = resumeFile.type || "";
+    const fileBuffer = Buffer.from(await resumeFile.arrayBuffer());
 
     if (!(fileType && fileType.toLowerCase().includes("pdf")) && !fileName.toLowerCase().endsWith(".pdf")) {
       return NextResponse.json({ error: "Only PDF files are supported." }, { status: 400 });
@@ -30,29 +29,27 @@ export async function POST(request: Request) {
     }
 
     // Dynamically import pdf-parse directly from its implementation file to avoid the debug wrapper.
-    let pdfParseFn: any;
+    type ParsedPdf = { text?: string; numpages?: number };
+    let pdfParseFn: ((buffer: Buffer) => Promise<ParsedPdf>) | undefined;
     try {
       const pdfParseModule = await import("pdf-parse/lib/pdf-parse.js");
-      pdfParseFn = (pdfParseModule as any).default ?? pdfParseModule;
-      if (typeof pdfParseFn !== "function") {
+      const candidate = (pdfParseModule as { default?: unknown }).default ?? pdfParseModule;
+      if (typeof candidate !== "function") {
         console.error("pdf-parse import did not resolve to a function", pdfParseModule);
         return NextResponse.json({ error: "Server cannot process PDFs (pdf-parse shape unexpected)." }, { status: 500 });
       }
+      pdfParseFn = candidate as (buffer: Buffer) => Promise<ParsedPdf>;
     } catch (impErr) {
       console.error("Failed to import pdf-parse", impErr);
       return NextResponse.json({ error: "Server cannot process PDFs (pdf-parse import failed)." }, { status: 500 });
     }
 
-    const parsed = await pdfParseFn(fileBuffer as Buffer);
+    const parsed = await pdfParseFn(fileBuffer);
     const resumeText = parsed.text?.trim() ?? "";
 
     if (!resumeText) {
       return NextResponse.json({ error: "Unable to extract readable text from the PDF file." }, { status: 400 });
     }
-
-    const validationIssues = validateResumeContent(resumeText);
-
-    const analysis = await calculateScore(resumeText);
 
     await connectDB();
 
@@ -63,37 +60,27 @@ export async function POST(request: Request) {
         textLength: resumeText.length,
         pageCount: parsed.numpages,
       },
-      atsScore: analysis.score,
-      grade: analysis.grade,
-      summary: analysis.summary,
-      details: analysis.details,
-      validationIssues,
-      missingSkills: [],
-      suggestions: analysis.recommendations,
-      interviewQuestions: [],
     });
 
     return NextResponse.json({
-      message: "Resume uploaded and analyzed successfully.",
+      message: "Resume uploaded and text extracted successfully.",
       resumeId: storedResume._id.toString(),
       fileName,
-      validationIssues,
       content: resumeText,
-      ...analysis,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Resume upload error", error);
 
     const isDev = process.env.NODE_ENV !== "production";
     const errMsg = error instanceof Error ? error.message : String(error);
 
-    const payload: any = {
+    const payload: { error: string; details?: string; stack?: string } = {
       error: "Failed to process the resume upload. Verify the file and try again.",
     };
 
     if (isDev) {
       payload.details = errMsg;
-      if (error?.stack) payload.stack = error.stack;
+      if (error instanceof Error && error.stack) payload.stack = error.stack;
     }
 
     return NextResponse.json(payload, { status: 500 });

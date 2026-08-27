@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { compareResumeToJD } from "@/src/lib/resumeAnalysis";
+import { compareResumeToJD } from "@/src/lib/evidenceResumeAnalysis";
 
 export async function POST(request: Request) {
   try {
@@ -13,8 +13,8 @@ export async function POST(request: Request) {
 
     const result = await compareResumeToJD(resumeText, jdText);
     return NextResponse.json(result);
-  } catch (err) {
-    console.error("Compare error", err);
-    return NextResponse.json({ error: "Unable to compare resume and JD." }, { status: 500 });
+  } catch (error) {
+    console.error("AI comparison error", error);
+    return NextResponse.json({ error: "AI comparison is unavailable. Configure OPENAI_API_KEY and try again." }, { status: 503 });
   }
 }

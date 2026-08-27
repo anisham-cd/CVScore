@@ -22,19 +22,6 @@ const ResumeSchema = new Schema(
       pageCount: Number,
     },
 
-    atsScore: Number,
-    grade: String,
-    summary: String,
-    details: {
-      lengthScore: Number,
-      keywordScore: Number,
-      structureScore: Number,
-    },
-
-    validationIssues: [String],
-    missingSkills: [String],
-    suggestions: [String],
-    interviewQuestions: [String],
   },
   {
     timestamps: true,
